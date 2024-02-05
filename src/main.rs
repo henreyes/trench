@@ -4,7 +4,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     OpenParen,
@@ -12,6 +11,30 @@ pub enum Token {
     Symbol(String),
     Number(f64),
 }
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Token::OpenParen => write!(f, "("),
+            Token::CloseParen => write!(f, ")"),
+            Token::Symbol(s) => write!(f, "{}", s),
+            Token::Number(n) => write!(f, "{}", n),
+        }
+    }
+}
+
+struct TokenVec(Vec<Token>);
+impl fmt::Display for TokenVec {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (index, token) in self.0.iter().enumerate() {
+            if index > 0 { write!(f, " ")?; } 
+            write!(f, "{}", token)?;
+        }
+        Ok(())
+    }
+}
+
+
 
 #[derive(Clone, Debug)]
 pub enum Atom {
@@ -29,7 +52,6 @@ pub struct LambdaFunction {
     body: Vec<Atom>,
     closure: Rc<Environment>, 
 }
-
 
 pub fn tokenize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
@@ -71,84 +93,44 @@ pub fn tokenize(input: &str) -> Vec<Token> {
     tokens
 }
 
-struct TokenVec(Vec<Token>);
-
-impl fmt::Display for TokenVec {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (index, token) in self.0.iter().enumerate() {
-            if index > 0 { write!(f, " ")?; } 
-            write!(f, "{}", token)?;
-        }
-        Ok(())
+pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
+    match tokens.split_first() {
+        Some((Token::OpenParen, rest)) => {
+            let mut list = Vec::new();
+            let mut current_tokens = rest;
+            while let Some((first, rest)) = current_tokens.split_first() {
+                match first {
+                    Token::CloseParen => return Ok((Atom::List(list), rest)), 
+                    _ => {
+                        let (parsed, new_rest) = parse_expr(current_tokens)?;
+                        list.push(parsed);
+                        current_tokens = new_rest;
+                    }
+                }
+            }
+            Err("Unclosed list".to_string())
+        },
+        _ => Err(format!("Expected open parenthesis, '(', found {:?}", tokens.first())),
     }
 }
 
-impl fmt::Display for Token {
-fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-        Token::OpenParen => write!(f, "("),
-        Token::CloseParen => write!(f, ")"),
-        Token::Symbol(s) => write!(f, "{}", s),
-        Token::Number(n) => write!(f, "{}", n),
+pub fn parse_expr(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
+    match tokens.split_first() {
+        Some((Token::OpenParen, _)) => parse_list(tokens),
+        Some((Token::Number(n), rest)) => Ok((Atom::Integer(*n), rest)),
+        Some((Token::Symbol(s), rest)) => Ok((Atom::Symbol(s.clone()), rest)),
+        Some((Token::CloseParen, _)) => Err("Unexpected ')'".to_string()),
+        None => Err("Empty expression".to_string()),
+        _ => Err(format!("Unexpected token: {:?}", tokens.first())),
     }
-}
-}
-
-
-
-pub fn parse_list(tokens: &[Token], pos: &mut usize) -> Result<Atom, String> {
-    if tokens.get(*pos) != Some(&Token::OpenParen) {
-        return Err(format!("Expected '(', found {:?}", tokens.get(*pos)));
-    }
-
-    *pos += 1; 
-
-    let mut list: Vec<Atom> = Vec::new();
-    while *pos < tokens.len() && tokens[*pos] != Token::CloseParen {
-        match &tokens[*pos] {
-            Token::Number(n) => {
-                list.push(Atom::Integer(*n));
-                *pos += 1;
-            },
-            Token::Symbol(s) => {
-                list.push(Atom::Symbol(s.clone()));
-                *pos += 1; 
-            },
-            Token::OpenParen => {
-                // Recursive call to handle nested lists
-                let sublist = parse_list(tokens, pos)?;
-                list.push(sublist);
-       
-            },
-            _ => return Err(format!("Unexpected token: {:?}", tokens[*pos])),
-        }
-    }
-
-    if *pos >= tokens.len() {
-        return Err("Unclosed list".to_string());
-    }
-
-    *pos += 1; 
-    Ok(Atom::List(list))
 }
 
 pub fn parse(tokens: &[Token]) -> Result<Atom, String> {
-    let mut pos = 0;
-    let result = if tokens.len() > pos {
-        match &tokens[pos] {
-            Token::OpenParen => parse_list(tokens, &mut pos),
-            Token::Number(n) => Ok(Atom::Integer(*n)),
-            Token::Symbol(s) => Ok(Atom::Symbol(s.clone())),
-            _ => Err(format!("Unexpected token: {:?}", tokens[pos])),
-        }
-    } else {
-        Err("No tokens to parse".to_string())
-    };
-
-    if pos < tokens.len() {
+    let (parsed, remaining) = parse_expr(tokens)?;
+    if !remaining.is_empty() {
         Err("Extra tokens after parse".to_string())
     } else {
-        result
+        Ok(parsed)
     }
 }
 
@@ -178,7 +160,8 @@ impl Environment {
 
 
 fn main() {
-    let input = "(defun my-function (x) (+ x 1))";
+    // "(defun my_function (x) (+ x 1))"
+    let input = "(1 2 3 4 5)";
     let tokens = tokenize(input);
     println!("Tokens: {:?}", tokens); 
 
