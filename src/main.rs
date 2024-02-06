@@ -1,20 +1,46 @@
 mod tokenize;
 mod parser;
+mod binding;
 use crate::parser::*;
 use crate::tokenize::*;
+use crate::binding::*;
+use core::cell::RefCell;
+use std::rc::Rc;
 
-
-pub fn assoc(symbol: &str) -> Result<Atom, String> {
-    println!("assoc to be defined");
-    Ok(Atom::Void)
+pub fn assoc(symbol: &str, a_list:  &Rc<RefCell<AList>>) -> Result<Atom, String> {
+    match a_list.borrow().get_binding(symbol) {
+        Some(atom) => Ok(atom),
+        None => Err(format!("Symbol '{}' not found", symbol)),
+    }
 }
 
 pub fn apply_atom(list: &[Atom]) -> Result<Atom, String> {
     if let Some(Atom::Symbol(s)) = list.first() {
         match s.as_str() {
-            "+" => println!("add symbol"), 
-            "-" => println!("subtract symbol"),
-            "*" => println!("multiply symbol"),
+            "+" | "-" | "*" => {
+                if list.len() < 3 {
+                    return Err("Not enough arguments".to_string());
+                }
+
+                let mut ops = Vec::new();
+                for atom in &list[1..] {
+                    match atom {
+                        Atom::Integer(n) => ops.push(*n),
+                        _ => return Err("unsupported operand for operation".to_string()),
+                    }
+                }
+
+                let result = match s.as_str() {
+                    "+" => ops.iter().sum(),
+                    "-" => ops.iter().skip(1).fold(ops[0], |acc, &val| acc - val),
+                    "*" => ops.iter().product(),
+                    _ => unreachable!(), 
+                };
+
+                return Ok(Atom::Integer(result));
+
+
+            },
             "defun" => println!("defun symbol"),
             "cond" => println!("cond symbol"),
             _ => println!("nothing here")
@@ -25,15 +51,14 @@ pub fn apply_atom(list: &[Atom]) -> Result<Atom, String> {
     }
 }
 
-pub fn eval(parsed: &Atom) -> Result<Atom, String> {
+pub fn eval(parsed: &Atom, a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
     match parsed {
         Atom::List(expr) => apply_atom(expr),
-        Atom::Symbol(atom) => assoc(atom),
+        Atom::Symbol(atom) => assoc(atom, a_list),
         Atom::Integer(int) => Ok(Atom::Integer(*int)),
         _ => Err("Unhandled Atom variant".to_string()),
     }
 }
-
 
 fn main() {
     // "(defun my_function (x) (+ x 1))"
@@ -41,15 +66,16 @@ fn main() {
     let tokens = tokenize(input);
     println!("Tokens: {:?}", tokens); 
 
+    let a_list = Rc::new(RefCell::new(AList::new()));
    
     let parsed_result = parse(&tokens);
-
     match parsed_result {
         Ok(parsed_atom) => {
             println!("Parsed Atom: {:?}", parsed_atom);
         },
         Err(e) => println!("Parsing Error: {}", e),
     }
+
 
 
 }
