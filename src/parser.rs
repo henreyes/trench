@@ -11,15 +11,9 @@ pub enum Atom {
     Bool(bool),
     Symbol(String),
     List(Vec<Atom>),
-    Lambda(LambdaFunction),
 }
 
-#[derive(Clone, Debug)]
-pub struct LambdaFunction {
-    params: Vec<String>,
-    body: Vec<Atom>,
-    closure: Rc<Environment>, 
-}
+
 
 
 #[derive(Clone, Debug)]
