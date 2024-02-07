@@ -67,14 +67,12 @@ fn main() {
     println!("Tokens: {:?}", tokens); 
 
     let a_list = Rc::new(RefCell::new(AList::new()));
-   
-    let parsed_result = parse(&tokens);
-    match parsed_result {
-        Ok(parsed_atom) => {
-            println!("Parsed Atom: {:?}", parsed_atom);
-        },
-        Err(e) => println!("Parsing Error: {}", e),
-    }
+    let result = (|| -> Result<(), String> {
+        let parsed_atom = parse(&tokens)?;
+        let eval_parsed = eval(&parsed_atom, &a_list)?;
+        println!("Eval: {:?}", eval_parsed);
+        Ok(())
+    })();
 
 
 
