@@ -7,6 +7,10 @@ pub enum Atom {
     Bool(bool),
     Symbol(String),
     List(Vec<Atom>),
+    Function {
+        params: Vec<String>,
+        body: Vec<Atom>, 
+    },
 }
 
 pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
