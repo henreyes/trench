@@ -11,6 +11,7 @@ pub enum Atom {
         params: Vec<String>,
         body: Vec<Atom>, 
     },
+    Quote(Box<Atom>),
 }
 
 pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
@@ -36,6 +37,10 @@ pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
 
 pub fn parse_expr(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
     match tokens.split_first() {
+        Some((Token::Quote, rest)) => {
+            let (quoted_expr, remaining_tokens) = parse_expr(rest)?;
+            Ok((Atom::Quote(Box::new(quoted_expr)), remaining_tokens))
+        },
         Some((Token::OpenParen, _)) => parse_list(tokens),
         Some((Token::Number(n), rest)) => Ok((Atom::Integer(*n), rest)),
         Some((Token::Symbol(s), rest)) => Ok((Atom::Symbol(s.clone()), rest)),
@@ -43,6 +48,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
         None => Err("Empty expression".to_string()),
     }
 }
+
 
 pub fn parse(tokens: &[Token]) -> Result<Atom, String> {
     let (parsed, remaining) = parse_expr(tokens)?;
