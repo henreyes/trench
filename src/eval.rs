@@ -83,7 +83,9 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
             },
             
             
-            "cond" =>  return Ok(Atom::Void),
+            "cond" => {
+                return Ok(Atom::Void)
+            },
             _ => {
                 match a_list.borrow().get_binding(s){
                     Some(Atom::Function {params, body}) => {
@@ -119,6 +121,7 @@ pub fn eval(parsed: &Atom, a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> 
         Atom::Symbol(atom) => assoc(atom, a_list),
         Atom::Integer(int) => Ok(Atom::Integer(*int)),
         Atom::Quote(inner) => Ok((**inner).clone()),
+        Atom::Bool(b) => Ok(Atom::Bool(*b)),
         _ => Err("Unhandled Atom variant".to_string()),
     }
 }
