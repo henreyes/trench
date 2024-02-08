@@ -13,7 +13,26 @@ pub fn assoc(symbol: &str, a_list:  &Rc<RefCell<AList>>) -> Result<Atom, String>
 pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
     if let Some(Atom::Symbol(s)) = list.first() {
         match s.as_str() {
-
+            "car" => {
+                if list.len() != 2 {
+                    return Err("car expects exactly one list argument".to_string());
+                }
+                match eval(&list[1], a_list)? {
+                    Atom::List(ref l) if !l.is_empty() => Ok(l[0].clone()),
+                    Atom::List(_) => Err("car cannot operate on an empty list".to_string()),
+                    _ => Err("car expects a list argument".to_string()),
+                }
+            },
+            "cdr" => {
+                if list.len() != 2 {
+                    return Err("cdr expects exactly one list argument".to_string());
+                }
+                match eval(&list[1], a_list)? {
+                    Atom::List(ref l) if !l.is_empty() => Ok(Atom::List(l[1..].to_vec())),
+                    Atom::List(_) => Err("cdr cannot operate on an empty list".to_string()),
+                    _ => Err("cdr expects a list argument".to_string()),
+                }
+            },
             "+" | "-" | "*" => {
                 if list.len() < 3 {
                     return Err("Not enough arguments".to_string());
