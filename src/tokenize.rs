@@ -7,6 +7,7 @@ pub enum Token {
     CloseParen,
     Symbol(String),
     Number(f64),
+    Quote,
 }
 
 impl fmt::Display for Token {
@@ -16,6 +17,7 @@ impl fmt::Display for Token {
             Token::CloseParen => write!(f, ")"),
             Token::Symbol(s) => write!(f, "{}", s),
             Token::Number(n) => write!(f, "{}", n),
+            Token::Quote => write!(f, "'"),
         }
     }
 }
@@ -34,8 +36,8 @@ impl fmt::Display for TokenVec {
 pub fn tokenize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut current_token = String::new();
-
     let mut chars = input.chars().peekable();
+
     while let Some(&c) = chars.peek() {
         match c {
             '(' => {
@@ -46,23 +48,37 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                 tokens.push(Token::CloseParen);
                 chars.next();
             },
-            ' ' | '\n' | '\t' => {
+            '\'' => {
+                tokens.push(Token::Quote); 
                 chars.next();
             },
-            _ => { 
+            ' ' | '\n' | '\t' => {
+                chars.next(); 
+            },
+            _ if c.is_digit(10) || c == '.' => {
                 while let Some(&nc) = chars.peek() {
-                    if nc == '(' || nc == ')' || nc.is_whitespace() {
+                    if nc.is_digit(10) || nc == '.' {
+                        current_token.push(nc);
+                        chars.next();
+                    } else {
+                        break;
+                    }
+                }
+                if let Ok(n) = current_token.parse::<f64>() {
+                    tokens.push(Token::Number(n));
+                }
+                current_token.clear();
+            },
+            _ => {
+                while let Some(&nc) = chars.peek() {
+                    if nc == '(' || nc == ')' || nc.is_whitespace() || nc == '\'' {
                         break;
                     } else {
                         current_token.push(nc);
                         chars.next();
                     }
                 }
-                if let Ok(n) = current_token.parse::<f64>() {
-                    tokens.push(Token::Number(n));
-                } else {
-                    tokens.push(Token::Symbol(current_token.clone()));
-                }
+                tokens.push(Token::Symbol(current_token.clone()));
                 current_token.clear();
             }
         }
