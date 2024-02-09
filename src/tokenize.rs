@@ -1,6 +1,5 @@
 use core::fmt;
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token {
     OpenParen,
@@ -8,6 +7,7 @@ pub enum Token {
     Symbol(String),
     Number(f64),
     Quote,
+    Nil,
 }
 
 impl fmt::Display for Token {
@@ -18,6 +18,7 @@ impl fmt::Display for Token {
             Token::Symbol(s) => write!(f, "{}", s),
             Token::Number(n) => write!(f, "{}", n),
             Token::Quote => write!(f, "'"),
+            Token::Nil => write!(f, "Nil"),
         }
     }
 }
@@ -78,7 +79,11 @@ pub fn tokenize(input: &str) -> Vec<Token> {
                         chars.next();
                     }
                 }
-                tokens.push(Token::Symbol(current_token.clone()));
+                if current_token == "nil" {
+                    tokens.push(Token::Nil);
+                } else {
+                    tokens.push(Token::Symbol(current_token.clone()));
+                }
                 current_token.clear();
             }
         }
