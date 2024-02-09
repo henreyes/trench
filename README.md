@@ -12,3 +12,4 @@ Purpose: To learn the Rust programming language.\
 - math op: + - *
 - atom
 - cons
+- equal
