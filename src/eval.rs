@@ -40,6 +40,20 @@ pub fn apply_equal(left: &Atom, right: &Atom) -> bool {
     }
 }
 
+pub fn apply_eq(left: &Atom, right: &Atom) -> bool {
+    match (left, right) {
+        (Atom::Integer(l), Atom::Integer(r)) => l == r,
+        (Atom::Bool(l), Atom::Bool(r)) => l == r,
+        (Atom::Nil, Atom::Nil) => true,
+        (Atom::Symbol(l), Atom::Symbol(r)) => l == r,
+        // TODO:  handle list and quote
+        (Atom::List(_), Atom::List(_)) => false,
+        (Atom::Quote(_), Atom::Quote(_)) => false, 
+        _ => false,
+    }
+}
+
+
 
 
 pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
@@ -115,7 +129,16 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
                 let arg2 = eval(&list[2], a_list)?;
                 Ok(Atom::Bool(apply_equal(&arg1, &arg2)))
             },
-  
+            "eq" => {
+                if list.len() != 3 {
+                    return Err("eq expects exactly two arguments".to_string());
+                }
+            
+                let arg1 = eval(&list[1], a_list)?;
+                let arg2 = eval(&list[2], a_list)?;
+            
+                Ok(Atom::Bool(is_eq(&arg1, &arg2)))
+            },            
             "defun" => {
                 if list.len() < 4 {
                     return Err("Invalid function definition: expected at least 4 elements".to_string());
