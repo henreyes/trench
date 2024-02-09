@@ -10,6 +10,38 @@ pub fn assoc(symbol: &str, a_list:  &Rc<RefCell<AList>>) -> Result<Atom, String>
     }
 }
 
+pub fn eval(parsed: &Atom, a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
+    match parsed {
+        Atom::List(expr) => apply_atom(expr, a_list),
+        Atom::Symbol(atom) => assoc(atom, a_list),
+        Atom::Integer(int) => Ok(Atom::Integer(*int)),
+        Atom::Quote(inner) => Ok((**inner).clone()),
+        Atom::Bool(b) => Ok(Atom::Bool(*b)),
+        Atom::Nil => Ok(Atom::Nil),
+        _ => Err("Unhandled Atom variant".to_string()),
+    }
+}
+
+pub fn apply_equal(left: &Atom, right: &Atom) -> bool {
+    match (left, right) {
+        (Atom::Integer(l), Atom::Integer(r)) => l == r,
+        (Atom::Bool(l), Atom::Bool(r)) => l == r,
+        (Atom::Nil, Atom::Nil) => true,
+        (Atom::List(l), Atom::List(r)) => {
+            if l.len() != r.len() {
+                return false;
+            }
+            l.iter().zip(r.iter()).all(|(atom_l, atom_r)| apply_equal(atom_l, atom_r)) 
+        },
+        (Atom::Symbol(l), Atom::Symbol(r)) => l == r,
+        (Atom::Quote(l), Atom::Quote(r)) => apply_equal(l, r),
+        _ => false,
+        
+    }
+}
+
+
+
 pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
     if let Some(Atom::Symbol(s)) = list.first() {
         match s.as_str() {
@@ -74,8 +106,16 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
                     _ => Err("Second argument to cons must be a list or Nil".to_string()),
                 }
             },
-            
+            "equal" => {
+                if list.len() != 3 {
+                    return Err("equal expects 2 arguments".to_string());
+                }
 
+                let arg1 = eval(&list[1], a_list)?;
+                let arg2 = eval(&list[2], a_list)?;
+                Ok(Atom::Bool(apply_equal(&arg1, &arg2)))
+            },
+  
             "defun" => {
                 if list.len() < 4 {
                     return Err("Invalid function definition: expected at least 4 elements".to_string());
@@ -136,14 +176,3 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
     }
 }
 
-pub fn eval(parsed: &Atom, a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
-    match parsed {
-        Atom::List(expr) => apply_atom(expr, a_list),
-        Atom::Symbol(atom) => assoc(atom, a_list),
-        Atom::Integer(int) => Ok(Atom::Integer(*int)),
-        Atom::Quote(inner) => Ok((**inner).clone()),
-        Atom::Bool(b) => Ok(Atom::Bool(*b)),
-        Atom::Nil => Ok(Atom::Nil),
-        _ => Err("Unhandled Atom variant".to_string()),
-    }
-}
