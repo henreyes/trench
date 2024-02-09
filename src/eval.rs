@@ -55,6 +55,27 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
                 };
                 return Ok(Atom::Integer(result));
             },
+            "cons" => {
+                if list.len() != 3 {
+                    return Err("cons expects exactly two arguments".to_string());
+                }
+                let elem = eval(&list[1], a_list)?;
+                let list_arg = eval(&list[2], a_list)?;
+            
+                match list_arg {
+                    Atom::List(mut existing_list) => {
+                        let mut new_list = vec![elem]; 
+                        new_list.append(&mut existing_list); 
+                        Ok(Atom::List(new_list)) 
+                    },
+                    Atom::Nil => {
+                        Ok(Atom::List(vec![elem]))
+                    },
+                    _ => Err("Second argument to cons must be a list or Nil".to_string()),
+                }
+            },
+            
+
             "defun" => {
                 if list.len() < 4 {
                     return Err("Invalid function definition: expected at least 4 elements".to_string());
@@ -122,6 +143,7 @@ pub fn eval(parsed: &Atom, a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> 
         Atom::Integer(int) => Ok(Atom::Integer(*int)),
         Atom::Quote(inner) => Ok((**inner).clone()),
         Atom::Bool(b) => Ok(Atom::Bool(*b)),
+        Atom::Nil => Ok(Atom::Nil),
         _ => Err("Unhandled Atom variant".to_string()),
     }
 }
