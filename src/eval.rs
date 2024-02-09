@@ -53,6 +53,21 @@ pub fn apply_eq(left: &Atom, right: &Atom) -> bool {
     }
 }
 
+pub fn apply_cmp<F>(args: &[Atom], a_list: &Rc<RefCell<AList>>, cmp: F) -> Result<Atom, String>
+where
+    F: Fn(f64, f64) -> bool {
+        if args.len() != 3 {
+            return Err("Comparison operator expects 2 arguments".to_string())
+        }
+        let left = eval(&args[1], a_list)?;
+        let right = eval(&args[2], a_list)?;
+
+        match (left, right) {
+            (Atom::Integer(l), Atom::Integer(r)) => Ok(Atom::Bool(cmp(l,r))),
+            _ => Err("Comparison operator expected 2 integers".to_string())
+        }
+    }
+
 
 
 
@@ -137,7 +152,7 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
                 let arg1 = eval(&list[1], a_list)?;
                 let arg2 = eval(&list[2], a_list)?;
             
-                Ok(Atom::Bool(is_eq(&arg1, &arg2)))
+                Ok(Atom::Bool(apply_eq(&arg1, &arg2)))
             },            
             "defun" => {
                 if list.len() < 4 {
@@ -165,8 +180,6 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
             
                 Ok(Atom::Void)
             },
-            
-            
             "cond" => {
                 return Ok(Atom::Void)
             },
