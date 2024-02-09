@@ -12,6 +12,8 @@ pub enum Atom {
         body: Vec<Atom>, 
     },
     Quote(Box<Atom>),
+    Nil,
+   
 }
 
 pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
@@ -45,6 +47,7 @@ pub fn parse_expr(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
         Some((Token::Number(n), rest)) => Ok((Atom::Integer(*n), rest)),
         Some((Token::Symbol(s), rest)) => Ok((Atom::Symbol(s.clone()), rest)),
         Some((Token::CloseParen, _)) => Err("Unexpected ')'".to_string()),
+        Some((Token::Nil, rest)) => Ok((Atom::Nil, rest)),
         None => Err("Empty expression".to_string()),
     }
 }
