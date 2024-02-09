@@ -11,3 +11,4 @@ Purpose: To learn the Rust programming language.\
 - defun & function binding
 - math op: + - *
 - atom
+- cons
