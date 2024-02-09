@@ -183,6 +183,10 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
             "cond" => {
                 return Ok(Atom::Void)
             },
+            "<" => apply_cmp(list, a_list, |a, b| a < b),
+            "<=" => apply_cmp(list, a_list, |a, b| a <= b),
+            ">" => apply_cmp(list, a_list, |a, b| a > b),
+            ">=" => apply_cmp(list, a_list, |a, b| a >= b),
             _ => {
                 match a_list.borrow().get_binding(s){
                     Some(Atom::Function {params, body}) => {
