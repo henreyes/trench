@@ -6,7 +6,10 @@ pub enum Atom {
     Integer(f64),
     Bool(bool),
     Symbol(String),
-    List(Vec<Atom>),
+    List {
+        Cons(Atom, Box<List>),
+        Nil,
+    }
     Function {
         params: Vec<String>,
         body: Vec<Atom>, 
@@ -15,6 +18,7 @@ pub enum Atom {
     Nil,
    
 }
+
 
 pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
     match tokens.split_first() {
