@@ -19,6 +19,24 @@ pub enum Atom {
    
 }
 
+impl List {
+    fn cons(atom: Atom, list: List) -> Self {
+        List::Cons(atom, Box::new(list))
+    }
+    fn car(&self) -> Option<Atom> {
+        match self {
+            List::Cons(atom, _) => Some(atom.clone()),
+            List::Nil => None,
+        }
+    }
+    fn cdr(&self) -> Option<Atom> {
+        match self {
+            List::Cons(atom, _) => Some(atom.clone()),
+            List::Nil => None,
+        }
+    }
+}
+
 
 pub fn parse_list(tokens: &[Token]) -> Result<(Atom, &[Token]), String> {
     match tokens.split_first() {
