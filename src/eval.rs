@@ -69,7 +69,17 @@ where
     }
 
 
+pub fn apply_type_predicate<F>(args: &[Atom], a_list: &Rc<RefCell<AList>>, predicate: F) -> Result<Atom, String>
+where
+    F: FnOnce(&Atom) -> bool {
+    if args.len() != 2 {
+        return Err("Type predicate functions expect exactly one argument".to_string());
+    }
 
+    let arg = eval(&args[1], a_list)?;
+    Ok(Atom::Bool(predicate(&arg)))
+}
+    
 
 pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, String> {
     if let Some(Atom::Symbol(s)) = list.first() {
@@ -187,6 +197,13 @@ pub fn apply_atom(list: &[Atom], a_list: &Rc<RefCell<AList>>) -> Result<Atom, St
             "<=" => apply_cmp(list, a_list, |a, b| a <= b),
             ">" => apply_cmp(list, a_list, |a, b| a > b),
             ">=" => apply_cmp(list, a_list, |a, b| a >= b),
+            "integerp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Integer(_))),
+            "boolp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Bool(_))),
+            "symbolp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Symbol(_))),
+            "listp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::List(_))),
+            "functionp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Function { .. })),
+            "nilp" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Nil)),
+            "quotep" => apply_type_predicate(list, a_list, |atom| matches!(atom, Atom::Quote(_))),
             _ => {
                 match a_list.borrow().get_binding(s){
                     Some(Atom::Function {params, body}) => {
