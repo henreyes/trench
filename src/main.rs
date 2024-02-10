@@ -8,22 +8,35 @@ use crate::binding::*;
 use crate::eval::*;
 use core::cell::RefCell;
 use std::rc::Rc;
+use std::io::{self, Write};
 
 
 fn main() {
-    // "(defun my_function (x) (+ x 1))"
-    let input = "(+ 1 5)";
-    let tokens = tokenize(input);
-    println!("Tokens: {:?}", tokens); 
+    let environment = Rc::new(RefCell::new(AList::new())); 
 
-    let a_list = Rc::new(RefCell::new(AList::new()));
-    let result = (|| -> Result<(), String> {
-        let parsed_atom = parse(&tokens)?;
-        let eval_parsed = eval(&parsed_atom, &a_list)?;
-        println!("Eval: {:?}", eval_parsed);
-        Ok(())
-    })();
+    loop {
+        print!("lisp> "); 
+        io::stdout().flush().unwrap(); 
 
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {
+                if input.trim().eq_ignore_ascii_case("quit") || input.trim().eq_ignore_ascii_case("exit") {
+                    break; 
+                }
 
-
+                let tokens = tokenize(&input);
+                match parse(&tokens) {
+                    Ok(parsed_expr) => {
+                        match eval(&parsed_expr, &environment) {
+                            Ok(result) => println!("Result: {:?}", result),
+                            Err(e) => println!("Error: {}", e),
+                        }
+                    },
+                    Err(e) => println!("Parse Error: {}", e),
+                }
+            },
+            Err(error) => println!("Error reading line: {}", error),
+        }
+    }
 }
