@@ -91,3 +91,24 @@ pub fn tokenize(input: &str) -> Vec<Token> {
 
     tokens
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_quote_expession() {
+        let input = "'(1 2 3)";
+        let expected = vec![
+            Token::Quote,
+            Token::OpenParen,
+            Token::Number(1.0),
+            Token::Number(2.0),
+            Token::Number(3.0),
+            Token::CloseParen,
+        ];
+
+        let result = tokenize(input);
+        assert_eq!(result, expected);
+    }
+}
