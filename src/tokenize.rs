@@ -97,7 +97,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_quote_expession() {
+    fn test_tokenize_quote() {
         let input = "'(1 2 3)";
         let expected = vec![
             Token::Quote,
@@ -108,6 +108,27 @@ mod tests {
             Token::CloseParen,
         ];
 
+        let result = tokenize(input);
+        assert_eq!(result, expected);
+    }
+    
+    #[test]
+    fn test_tokenize_defun() {
+        let input = "(defun my_func (x) (+ x 3))";
+        let expected = vec![
+            Token::OpenParen,
+            Token::Symbol("defun".to_string()),
+            Token::Symbol("my_func".to_string()),
+            Token::OpenParen,
+            Token::Symbol("x".to_string()),
+            Token::CloseParen,
+            Token::OpenParen,
+            Token::Symbol("+".to_string()),
+            Token::Symbol("x".to_string()),
+            Token::Number(3.0),
+            Token::CloseParen,
+            Token::CloseParen,
+        ];
         let result = tokenize(input);
         assert_eq!(result, expected);
     }
